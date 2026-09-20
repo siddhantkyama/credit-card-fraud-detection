@@ -1,0 +1,17 @@
+# Environments and caches
+venv/
+.venv/
+__pycache__/
+*.pyc
+.pytest_cache/
+.ipynb_checkpoints/
+
+# Large or generated files: do NOT commit these
+data/creditcard.csv
+models/*.joblib
+*.pkl
+
+# Keep the small files that make the demo work
+!models/samples.json
+!models/metrics.json
+!outputs/*.png

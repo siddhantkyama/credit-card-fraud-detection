@@ -1,0 +1,563 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Transaction risk desk</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Schibsted+Grotesk:wght@400;500;700;800&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --paper: #EDF1EE;
+    --panel: #F7F9F7;
+    --ink: #13201A;
+    --ink-2: #48584F;
+    --rule: #C3CFC7;
+    --red: #B3261E;
+    --green: #116644;
+    --amber: #8A5300;
+    --focus: #1B5FC1;
+    --on-ink: #F7F9F7;
+    --font: "Schibsted Grotesk", system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
+  }
+  @media (prefers-color-scheme: dark) {
+    :root {
+      --paper: #0D1410;
+      --panel: #141D18;
+      --ink: #E5EEE8;
+      --ink-2: #A0B1A7;
+      --rule: #2A3831;
+      --red: #FF7A6E;
+      --green: #4FCB8F;
+      --amber: #F0B44A;
+      --focus: #7DB3FF;
+      --on-ink: #0D1410;
+    }
+  }
+
+  *, *::before, *::after { box-sizing: border-box; }
+  [hidden] { display: none !important; }
+  html { -webkit-text-size-adjust: 100%; }
+  body {
+    margin: 0;
+    background: var(--paper);
+    color: var(--ink);
+    font-family: var(--font);
+    font-size: 1rem;
+    line-height: 1.55;
+  }
+  h1, h2, h3, p { margin: 0; }
+  :focus-visible { outline: 3px solid var(--focus); outline-offset: 2px; }
+
+  .wrap { max-width: 1080px; margin: 0 auto; padding: 0 20px; }
+  .skip { position: absolute; left: -999px; top: 8px; background: var(--ink); color: var(--on-ink); padding: 8px 12px; z-index: 10; }
+  .skip:focus { left: 8px; }
+
+  /* ---- masthead ---- */
+  .masthead { border-bottom: 1px solid var(--ink); background: var(--paper); }
+  .masthead-row { display: flex; justify-content: space-between; align-items: flex-end; gap: 16px; padding-top: 28px; padding-bottom: 18px; flex-wrap: wrap; }
+  .title { font-size: 2rem; line-height: 1.1; font-weight: 800; letter-spacing: -0.02em; }
+  .sub { color: var(--ink-2); margin-top: 6px; max-width: 52ch; text-wrap: balance; }
+  .status { display: inline-flex; align-items: center; gap: 8px; font-size: 0.875rem; color: var(--ink-2); }
+  .dot { width: 9px; height: 9px; border-radius: 50%; background: var(--ink-2); }
+  .status[data-state="ok"] .dot { background: var(--green); }
+  .status[data-state="warn"] .dot { background: var(--amber); }
+  .status[data-state="error"] .dot { background: var(--red); }
+
+  .tabs { display: flex; gap: 4px; overflow-x: auto; }
+  .tab {
+    font: inherit; font-weight: 500; color: var(--ink-2);
+    background: none; border: 0; border-bottom: 4px solid transparent;
+    padding: 10px 14px 8px; cursor: pointer; white-space: nowrap;
+  }
+  .tab[aria-selected="true"] { color: var(--ink); font-weight: 700; border-bottom-color: var(--ink); }
+  .tab:hover { color: var(--ink); }
+
+  main.wrap { padding-top: 32px; padding-bottom: 64px; }
+  .notice { border-left: 4px solid var(--amber); background: var(--panel); padding: 10px 14px; margin-bottom: 24px; max-width: 70ch; }
+  .heading { font-size: 1.25rem; font-weight: 700; letter-spacing: -0.01em; margin-bottom: 12px; }
+  .subheading { font-size: 1rem; font-weight: 700; }
+  .hint { font-size: 0.875rem; color: var(--ink-2); max-width: 60ch; }
+  .lede { color: var(--ink-2); max-width: 64ch; margin-bottom: 20px; }
+
+  /* ---- form controls ---- */
+  .label { display: block; font-weight: 500; font-size: 0.9375rem; }
+  .input {
+    display: block; width: 100%; margin-top: 4px;
+    font: inherit; color: var(--ink); background: var(--panel);
+    border: 1px solid var(--rule); border-radius: 3px; padding: 9px 11px;
+  }
+  .input:hover { border-color: var(--ink-2); }
+  .field-pair { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; margin-bottom: 8px; }
+  .actions { display: flex; flex-wrap: wrap; gap: 10px; margin: 16px 0; align-items: center; }
+  .btn {
+    font: inherit; font-weight: 700; border-radius: 3px; padding: 10px 16px; cursor: pointer;
+    border: 1px solid var(--ink); background: transparent; color: var(--ink);
+  }
+  .btn:hover { background: var(--rule); }
+  .btn-primary { background: var(--ink); color: var(--on-ink); }
+  .btn-primary:hover { background: var(--ink); opacity: 0.88; }
+  .btn:disabled { opacity: 0.5; cursor: progress; }
+  .error { color: var(--red); font-weight: 500; margin-top: 8px; max-width: 64ch; }
+
+  .more { border-top: 1px solid var(--rule); border-bottom: 1px solid var(--rule); padding: 10px 0; margin: 16px 0; }
+  .more > summary { cursor: pointer; font-weight: 700; padding: 4px 0; }
+  .pca-grid { display: grid; grid-template-columns: repeat(4, 1fr); gap: 10px; margin: 14px 0; }
+  .pca-grid .label { font-size: 0.8125rem; color: var(--ink-2); }
+  .pca-grid .input { padding: 6px 8px; font-size: 0.875rem; }
+  .paste { margin-top: 8px; }
+
+  /* ---- score layout ---- */
+  .score-grid { display: grid; grid-template-columns: minmax(0, 1.05fr) minmax(0, 0.95fr); gap: 48px; align-items: start; }
+
+  /* ---- verdict ---- */
+  .verdict {
+    position: sticky; top: 16px; overflow: hidden;
+    border: 1px solid var(--ink); background: var(--panel); min-height: 380px;
+    --level: var(--ink-2);
+  }
+  .verdict[data-level="high"] { --level: var(--red); }
+  .verdict[data-level="medium"] { --level: var(--amber); }
+  .verdict[data-level="low"] { --level: var(--green); }
+  .guilloche { position: absolute; inset: 0; width: 100%; height: 100%; color: var(--ink); opacity: 0.07; pointer-events: none; }
+  .verdict-inner { position: relative; padding: 28px; }
+  .empty { color: var(--ink-2); max-width: 34ch; padding-top: 24px; }
+
+  .stamp {
+    display: inline-block; transform: rotate(-4deg);
+    border: 4px double var(--level); color: var(--level);
+    font-weight: 800; font-size: 1.625rem; letter-spacing: -0.01em; line-height: 1.1;
+    padding: 8px 16px; border-radius: 4px; margin-bottom: 22px;
+    animation: stamp 320ms cubic-bezier(.2, .8, .3, 1) both;
+  }
+  @keyframes stamp {
+    0%   { transform: rotate(-4deg) scale(1.7); opacity: 0; }
+    65%  { transform: rotate(-4deg) scale(0.96); opacity: 1; }
+    100% { transform: rotate(-4deg) scale(1); opacity: 1; }
+  }
+  .prob { display: flex; align-items: baseline; gap: 12px; flex-wrap: wrap; }
+  .prob-value { font-size: clamp(3rem, 9vw, 4.5rem); font-weight: 800; line-height: 1; letter-spacing: -0.03em; }
+  .prob-label { color: var(--ink-2); }
+
+  .ruler { position: relative; margin: 44px 0 6px; height: 12px; background: var(--rule); border-radius: 2px; }
+  .ruler-fill { position: absolute; inset: 0 auto 0 0; background: var(--level); border-radius: 2px; transition: width 500ms ease; }
+  .ruler-tick { position: absolute; top: -8px; bottom: -8px; width: 2px; background: var(--ink); }
+  .ruler-tick span { position: absolute; bottom: 100%; left: 50%; transform: translateX(-50%); white-space: nowrap; font-size: 0.8125rem; font-weight: 500; margin-bottom: 4px; }
+  .ruler-tick[data-edge="left"] span { left: 0; transform: none; }
+  .ruler-tick[data-edge="right"] span { left: auto; right: 0; transform: none; }
+  .ruler-ends { display: flex; justify-content: space-between; font-size: 0.8125rem; color: var(--ink-2); }
+  .verdict-text { margin-top: 18px; max-width: 46ch; }
+  .note { margin-top: 12px; font-size: 0.875rem; color: var(--ink-2); border-top: 1px solid var(--rule); padding-top: 10px; max-width: 46ch; }
+
+  /* ---- ledger lists and tables ---- */
+  .ledger { margin: 0 0 24px; max-width: 640px; }
+  .ledger-row { display: flex; justify-content: space-between; gap: 24px; padding: 10px 0; border-bottom: 1px solid var(--rule); }
+  .ledger-row dt { color: var(--ink-2); }
+  .ledger-row dd { margin: 0; font-weight: 700; text-align: right; }
+  .table-head { display: flex; justify-content: space-between; align-items: center; gap: 12px; margin: 28px 0 8px; flex-wrap: wrap; }
+  .table-wrap { overflow-x: auto; }
+  .tbl { width: 100%; border-collapse: collapse; }
+  .tbl th { text-align: left; font-weight: 500; color: var(--ink-2); font-size: 0.875rem; padding: 8px 12px 8px 0; border-bottom: 1px solid var(--ink); white-space: nowrap; }
+  .tbl td { padding: 9px 12px 9px 0; border-bottom: 1px solid var(--rule); vertical-align: middle; }
+  .tbl .num { text-align: right; }
+  .tbl .selected td:first-child { box-shadow: inset 4px 0 0 var(--ink); padding-left: 12px; font-weight: 700; }
+  .bar { display: inline-block; vertical-align: middle; width: 90px; height: 7px; background: var(--rule); border-radius: 2px; margin-right: 10px; position: relative; }
+  .bar > i { position: absolute; inset: 0 auto 0 0; background: var(--ink); border-radius: 2px; }
+  .bar.risk > i { background: var(--red); }
+  .tag { font-size: 0.8125rem; font-weight: 700; padding: 2px 8px; border: 1px solid currentColor; border-radius: 3px; }
+  .tag-red { color: var(--red); }
+  .tag-green { color: var(--green); }
+
+  .charts { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 32px 40px; margin-top: 8px; }
+  .chart img { display: block; width: 100%; height: auto; background: #fff; border: 1px solid var(--rule); }
+  .chart figcaption { font-size: 0.875rem; color: var(--ink-2); margin-top: 8px; max-width: 52ch; }
+  .chart { margin: 0; }
+  .section { margin-top: 40px; }
+
+  @media (max-width: 860px) {
+    .score-grid { grid-template-columns: 1fr; gap: 32px; }
+    .verdict { position: relative; top: 0; min-height: 0; }
+    .charts { grid-template-columns: 1fr; }
+    .pca-grid { grid-template-columns: repeat(3, 1fr); }
+  }
+  @media (max-width: 480px) {
+    .field-pair { grid-template-columns: 1fr; }
+    .pca-grid { grid-template-columns: repeat(2, 1fr); }
+    .title { font-size: 1.625rem; }
+  }
+  @media (prefers-reduced-motion: reduce) {
+    .stamp { animation: none; }
+    .ruler-fill { transition: none; }
+  }
+</style>
+</head>
+<body>
+<a class="skip" href="#main">Skip to content</a>
+
+<header class="masthead">
+  <div class="wrap masthead-row">
+    <div>
+      <h1 class="title">Transaction risk desk</h1>
+      <p class="sub">Check one card transaction, or a whole file, for signs of fraud.</p>
+    </div>
+    <p class="status" id="status" data-state="loading" role="status">
+      <span class="dot" aria-hidden="true"></span><span id="statusText">Connecting to the model</span>
+    </p>
+  </div>
+  <div class="wrap">
+    <div class="tabs" role="tablist" aria-label="Sections">
+      <button class="tab" role="tab" id="tab-score" aria-controls="panel-score" aria-selected="true">Score a transaction</button>
+      <button class="tab" role="tab" id="tab-batch" aria-controls="panel-batch" aria-selected="false" tabindex="-1">Score a file</button>
+      <button class="tab" role="tab" id="tab-report" aria-controls="panel-report" aria-selected="false" tabindex="-1">Model report</button>
+    </div>
+  </div>
+</header>
+
+<main id="main" class="wrap">
+  <p class="notice" id="fastNotice" hidden>This model was trained in fast test mode, so its numbers are not reliable. Run <strong>python -m src.train</strong> without <strong>--fast</strong> for the real model.</p>
+
+  <!-- ===== Score one transaction ===== -->
+  <section id="panel-score" role="tabpanel" aria-labelledby="tab-score" class="score-grid">
+    <div>
+      <h2 class="heading">Transaction details</h2>
+      <div class="field-pair">
+        <div>
+          <label class="label" for="f-Amount">Amount</label>
+          <input class="input" id="f-Amount" type="number" step="any" min="0" inputmode="decimal" placeholder="For example 149.62">
+        </div>
+        <div>
+          <label class="label" for="f-Time">Time in seconds</label>
+          <input class="input" id="f-Time" type="number" step="any" min="0" inputmode="decimal" placeholder="For example 406">
+        </div>
+      </div>
+      <p class="hint">Time counts the seconds since the first transaction in the data set. Only the time of day is used.</p>
+
+      <div class="actions">
+        <button class="btn" id="loadNormal" type="button">Load a normal example</button>
+        <button class="btn" id="loadFraud" type="button">Load a fraud example</button>
+      </div>
+
+      <details class="more">
+        <summary>Model inputs V1 to V28</summary>
+        <p class="hint" style="margin-top:8px">The card network anonymised these values, so they have no everyday meaning. Empty boxes count as 0, which is the average.</p>
+        <div class="pca-grid" id="pcaGrid"></div>
+        <label class="label paste" for="pasteBox">Or paste one row from the data set</label>
+        <textarea class="input" id="pasteBox" rows="3" placeholder="30 values in this order: Time, V1 to V28, Amount"></textarea>
+        <div class="actions"><button class="btn" id="applyPaste" type="button">Fill the boxes</button></div>
+      </details>
+
+      <div class="actions">
+        <button class="btn btn-primary" id="scoreBtn" type="button">Score transaction</button>
+        <button class="btn" id="clearBtn" type="button">Clear</button>
+      </div>
+      <p class="error" id="scoreError" role="alert" hidden></p>
+    </div>
+
+    <section class="verdict" id="verdict" data-level="none" aria-label="Result" aria-live="polite">
+      <svg class="guilloche" aria-hidden="true" focusable="false">
+        <defs>
+          <pattern id="wave" width="48" height="24" patternUnits="userSpaceOnUse">
+            <path d="M0 12 C 8 2, 16 2, 24 12 S 40 22, 48 12" fill="none" stroke="currentColor" stroke-width="1"/>
+            <path d="M0 12 C 8 22, 16 22, 24 12 S 40 2, 48 12" fill="none" stroke="currentColor" stroke-width="1"/>
+          </pattern>
+        </defs>
+        <rect width="100%" height="100%" fill="url(#wave)"/>
+      </svg>
+      <div class="verdict-inner">
+        <p class="empty" id="verdictEmpty">No result yet. Load an example, or enter an amount and a time, then choose Score transaction.</p>
+        <div id="verdictBody" hidden>
+          <div class="stamp" id="stamp">Approve</div>
+          <p class="prob"><span class="prob-value" id="probValue">0%</span><span class="prob-label">chance this is fraud</span></p>
+          <div class="ruler" id="ruler" role="img" aria-label="">
+            <div class="ruler-fill" id="rulerFill"></div>
+            <div class="ruler-tick" id="rulerTick"><span id="rulerTickLabel"></span></div>
+          </div>
+          <div class="ruler-ends" aria-hidden="true"><span>0%</span><span>100%</span></div>
+          <p class="verdict-text" id="verdictText"></p>
+          <p class="note" id="truthNote" hidden></p>
+        </div>
+      </div>
+    </section>
+  </section>
+
+  <!-- ===== Score a file ===== -->
+  <section id="panel-batch" role="tabpanel" aria-labelledby="tab-batch" hidden>
+    <h2 class="heading">Score a file</h2>
+    <p class="lede">Upload a CSV with the columns Time, V1 to V28 and Amount, up to 50,000 rows. If the file also has a Class column, the results show how many real frauds were caught.</p>
+    <div class="actions">
+      <input class="input" style="width:auto" id="csvFile" type="file" accept=".csv,text/csv" aria-label="CSV file">
+      <button class="btn btn-primary" id="batchBtn" type="button">Score file</button>
+    </div>
+    <p class="error" id="batchError" role="alert" hidden></p>
+
+    <div id="batchResult" hidden>
+      <dl class="ledger" id="batchSummary"></dl>
+      <div class="table-head">
+        <h3 class="subheading">The 100 highest-risk rows</h3>
+        <button class="btn" id="downloadBtn" type="button">Download flagged rows</button>
+      </div>
+      <div class="table-wrap">
+        <table class="tbl">
+          <thead><tr><th>Row</th><th class="num">Amount</th><th>Fraud probability</th><th>Decision</th><th id="actualHead" hidden>Actual</th></tr></thead>
+          <tbody id="batchBody"></tbody>
+        </table>
+      </div>
+    </div>
+  </section>
+
+  <!-- ===== Model report ===== -->
+  <section id="panel-report" role="tabpanel" aria-labelledby="tab-report" hidden>
+    <div id="reportBody"><p class="lede">Loading the model report.</p></div>
+  </section>
+</main>
+
+<script>
+(() => {
+  const API = (window.API_BASE || "").replace(/\/$/, "");
+  const PCA = Array.from({ length: 28 }, (_, i) => `V${i + 1}`);
+  const RAW = ["Time", ...PCA, "Amount"];
+  const $ = (sel) => document.querySelector(sel);
+  const num = new Intl.NumberFormat(undefined, { maximumFractionDigits: 2 });
+  const pct = (p) => { const v = p * 100; return (v > 0 && v < 1 ? v.toFixed(2) : v.toFixed(1)) + "%"; };
+  const esc = (s) => String(s).replace(/[&<>"']/g, (c) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" }[c]));
+
+  let samples = null;        // { 0: [...normal], 1: [...fraud] }
+  let truth = null;          // ground truth of the example currently loaded, if any
+  let lastBatchRows = [];
+
+  /* ---------- API helper with readable errors ---------- */
+  async function api(path, options) {
+    let res;
+    try { res = await fetch(API + path, options); }
+    catch { throw new Error("Cannot reach the API. Start it with: uvicorn api.main:app --reload, then open http://127.0.0.1:8000"); }
+    if (!res.ok) {
+      let detail = res.statusText;
+      try { detail = (await res.json()).detail ?? detail; } catch { /* keep statusText */ }
+      if (Array.isArray(detail)) detail = detail.map((d) => `${(d.loc || []).slice(1).join(" ")}: ${d.msg}`).join("; ");
+      const err = new Error(detail); err.status = res.status; throw err;
+    }
+    return res.json();
+  }
+
+  /* ---------- tabs ---------- */
+  const tabs = ["score", "batch", "report"];
+  function showTab(name) {
+    tabs.forEach((t) => {
+      const selected = t === name;
+      const tab = $(`#tab-${t}`);
+      tab.setAttribute("aria-selected", selected);
+      tab.tabIndex = selected ? 0 : -1;
+      $(`#panel-${t}`).hidden = !selected;
+    });
+  }
+  tabs.forEach((t, i) => {
+    const tab = $(`#tab-${t}`);
+    tab.addEventListener("click", () => showTab(t));
+    tab.addEventListener("keydown", (e) => {
+      if (e.key !== "ArrowRight" && e.key !== "ArrowLeft") return;
+      const next = tabs[(i + (e.key === "ArrowRight" ? 1 : tabs.length - 1)) % tabs.length];
+      showTab(next); $(`#tab-${next}`).focus();
+    });
+  });
+
+  /* ---------- form ---------- */
+  $("#pcaGrid").innerHTML = PCA.map((c) =>
+    `<div><label class="label" for="f-${c}">${c}</label><input class="input" id="f-${c}" type="number" step="any" inputmode="decimal"></div>`).join("");
+  RAW.forEach((c) => $(`#f-${c}`).addEventListener("input", () => { truth = null; }));
+
+  function fillForm(values) {
+    RAW.forEach((c) => { $(`#f-${c}`).value = values[c] ?? ""; });
+  }
+  function showError(id, msg) { const el = $(id); el.textContent = msg; el.hidden = !msg; }
+
+  function loadExample(label) {
+    if (!samples) { showError("#scoreError", "Examples are not available yet. Train the model first with: python -m src.train"); return; }
+    const pool = samples.filter((s) => s.label === label);
+    const pick = pool[Math.floor(Math.random() * pool.length)];
+    fillForm(pick.values);
+    truth = label;
+    showError("#scoreError", "");
+  }
+  $("#loadNormal").addEventListener("click", () => loadExample(0));
+  $("#loadFraud").addEventListener("click", () => loadExample(1));
+
+  $("#applyPaste").addEventListener("click", () => {
+    const parts = $("#pasteBox").value.split(/[\s,;]+/).filter(Boolean).map(Number);
+    if (parts.length !== RAW.length || parts.some(Number.isNaN)) {
+      showError("#scoreError", `Expected ${RAW.length} numbers in the order Time, V1 to V28, Amount. You pasted ${parts.length}.`);
+      return;
+    }
+    fillForm(Object.fromEntries(RAW.map((c, i) => [c, parts[i]])));
+    truth = null; showError("#scoreError", "");
+  });
+
+  $("#clearBtn").addEventListener("click", () => {
+    fillForm({}); truth = null; showError("#scoreError", "");
+    $("#verdictBody").hidden = true; $("#verdictEmpty").hidden = false; $("#verdict").dataset.level = "none";
+  });
+
+  function readTransaction() {
+    const tx = {};
+    const problems = [];
+    for (const c of RAW) {
+      const raw = $(`#f-${c}`).value.trim();
+      if (raw === "") {
+        if (c === "Amount" || c === "Time") problems.push(c === "Time" ? "Time" : "Amount");
+        else tx[c] = 0;
+      } else tx[c] = Number(raw);
+    }
+    if (problems.length) throw new Error(`Enter a value for ${problems.join(" and ")}, or load an example.`);
+    return tx;
+  }
+
+  /* ---------- verdict ---------- */
+  const STAMPS = { high: "Flag as fraud", medium: "Manual review", low: "Approve" };
+  function renderVerdict(r, tx) {
+    $("#verdict").dataset.level = r.risk_level;
+    $("#verdictEmpty").hidden = true;
+    $("#verdictBody").hidden = false;
+
+    const stamp = $("#stamp");
+    stamp.textContent = STAMPS[r.risk_level];
+    stamp.style.animation = "none"; void stamp.offsetWidth; stamp.style.animation = "";
+
+    $("#probValue").textContent = pct(r.probability);
+    $("#rulerFill").style.width = Math.max(r.probability * 100, 0.6) + "%";
+    const tick = $("#rulerTick");
+    tick.style.left = r.threshold * 100 + "%";
+    tick.dataset.edge = r.threshold < 0.14 ? "left" : r.threshold > 0.86 ? "right" : "";
+    $("#rulerTickLabel").textContent = `Threshold ${pct(r.threshold)}`;
+    $("#ruler").setAttribute("aria-label", `Score ${pct(r.probability)}, decision threshold ${pct(r.threshold)}`);
+
+    const verb = r.is_fraud ? "flagged" : "not flagged";
+    $("#verdictText").textContent =
+      `The model flags anything scoring ${pct(r.threshold)} or higher. This transaction of ${num.format(tx.Amount)} scored ${pct(r.probability)}, so it is ${verb}.`;
+
+    // On narrow screens the result sits below the form, so bring it into view.
+    if (window.matchMedia("(max-width: 860px)").matches) {
+      const calm = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
+      $("#verdict").scrollIntoView({ behavior: calm ? "auto" : "smooth", block: "nearest" });
+    }
+
+    const note = $("#truthNote");
+    if (truth === null) note.hidden = true;
+    else {
+      const caught = r.is_fraud === (truth === 1);
+      note.hidden = false;
+      note.textContent = `This example comes from the held-out test data. Its real label is ${truth === 1 ? "fraud" : "normal"}, and the model ${caught ? "got it right" : "got it wrong"}.`;
+    }
+  }
+
+  $("#scoreBtn").addEventListener("click", async () => {
+    showError("#scoreError", "");
+    const btn = $("#scoreBtn");
+    try {
+      const tx = readTransaction();
+      btn.disabled = true; btn.textContent = "Scoring";
+      renderVerdict(await api("/predict", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify(tx) }), tx);
+    } catch (e) { showError("#scoreError", e.message); }
+    finally { btn.disabled = false; btn.textContent = "Score transaction"; }
+  });
+
+  /* ---------- batch ---------- */
+  $("#batchBtn").addEventListener("click", async () => {
+    showError("#batchError", ""); $("#batchResult").hidden = true;
+    const file = $("#csvFile").files[0];
+    if (!file) { showError("#batchError", "Choose a CSV file first."); return; }
+    const btn = $("#batchBtn"); btn.disabled = true; btn.textContent = "Scoring";
+    try {
+      const body = new FormData(); body.append("file", file);
+      renderBatch(await api("/predict-batch", { method: "POST", body }));
+    } catch (e) { showError("#batchError", e.message); }
+    finally { btn.disabled = false; btn.textContent = "Score file"; }
+  });
+
+  function renderBatch({ summary: s, rows }) {
+    const items = [
+      ["Rows scored", s.rows_scored.toLocaleString()],
+      ["Rows flagged as fraud", `${s.flagged_count.toLocaleString()} (${pct(s.flagged_share)})`],
+      ["Amount in flagged rows", `${num.format(s.amount_flagged)} of ${num.format(s.amount_total)}`],
+    ];
+    if (s.actual_frauds !== undefined) items.push(["Real frauds caught", `${s.frauds_caught} of ${s.actual_frauds}`]);
+    $("#batchSummary").innerHTML = items.map(([k, v]) => `<div class="ledger-row"><dt>${k}</dt><dd>${v}</dd></div>`).join("");
+
+    const hasActual = rows.length && rows[0].actual !== undefined;
+    $("#actualHead").hidden = !hasActual;
+    $("#batchBody").innerHTML = rows.map((r) => `
+      <tr><td>${r.row}</td><td class="num">${num.format(r.amount)}</td>
+      <td><span class="bar risk"><i style="width:${Math.max(r.probability * 100, 1)}%"></i></span>${pct(r.probability)}</td>
+      <td>${r.flagged ? '<span class="tag tag-red">Flagged</span>' : '<span class="tag tag-green">Approved</span>'}</td>
+      ${hasActual ? `<td>${r.actual === 1 ? "Fraud" : "Normal"}</td>` : ""}</tr>`).join("");
+    lastBatchRows = rows.filter((r) => r.flagged);
+    $("#downloadBtn").disabled = lastBatchRows.length === 0;
+    $("#batchResult").hidden = false;
+  }
+
+  $("#downloadBtn").addEventListener("click", () => {
+    const csv = "row,amount,fraud_probability\n" + lastBatchRows.map((r) => `${r.row},${r.amount},${r.probability.toFixed(6)}`).join("\n");
+    const a = document.createElement("a");
+    a.href = URL.createObjectURL(new Blob([csv], { type: "text/csv" }));
+    a.download = "flagged_rows.csv"; a.click(); URL.revokeObjectURL(a.href);
+  });
+
+  /* ---------- model report ---------- */
+  function renderReport(m) {
+    const t = m.test, at = t.at_chosen_threshold, c = t.cost_chosen_threshold;
+    const p = (v) => (v * 100).toFixed(1) + "%";
+    const ledger = [
+      ["Frauds caught", `${at.tp} of ${at.tp + at.fn}`],
+      ["False alarms", `${at.fp.toLocaleString()} of ${(at.tn + at.fp).toLocaleString()} normal transactions`],
+      ["Precision", p(at.precision)],
+      ["Recall", `${p(at.recall)} (95% range ${p(t.recall_ci95[0])} to ${p(t.recall_ci95[1])})`],
+      ["PR-AUC", `${t.pr_auc.toFixed(3)} (95% range ${t.pr_auc_ci95[0].toFixed(3)} to ${t.pr_auc_ci95[1].toFixed(3)})`],
+      ["Fraud loss avoided", `${c.saved_pct.toFixed(1)}% (${num.format(c.saved)} of ${num.format(c.no_model_loss)})`],
+    ];
+    const cv = m.cv_results.map((r) => `
+      <tr class="${r.model === m.model_name ? "selected" : ""}">
+        <td>${esc(r.model)}${r.model === m.model_name ? " (selected)" : ""}</td>
+        <td><span class="bar"><i style="width:${(r.pr_auc_mean * 100).toFixed(1)}%"></i></span>${r.pr_auc_mean.toFixed(3)} ± ${r.pr_auc_std.toFixed(3)}</td>
+        <td class="num">${r.roc_auc_mean.toFixed(3)}</td></tr>`).join("");
+    const captions = {
+      comparison: "How each model scored in cross-validation on the training data.",
+      pr_curve: "The trade-off between catching frauds and raising false alarms on the test data. The red dot is the chosen threshold.",
+      cost_curve: "What each threshold would have cost on the validation data. The dashed line marks the one chosen.",
+      confusion: "What the model got right and wrong on the test data.",
+      importance: "Which inputs pushed the model's scores the most. V1 to V28 are anonymised, so their meaning is unknown.",
+    };
+    const charts = Object.entries(m.plots).filter(([, f]) => f).map(([k, f]) => `
+      <figure class="chart"><img src="${API}/outputs/${esc(f)}" alt="${esc(captions[k])}" loading="lazy">
+      <figcaption>${captions[k]}</figcaption></figure>`).join("");
+
+    $("#reportBody").innerHTML = `
+      <h2 class="heading">Model report</h2>
+      <p class="lede">The ${esc(m.model_name)} model was trained on the oldest 70% of transactions and tested on the newest 15%, which it never saw. The decision threshold of ${pct(m.threshold)} was chosen to minimise cost, counting each missed fraud at its amount and each alert at ${num.format(m.review_cost)} for review.</p>
+      <h3 class="subheading" style="margin-bottom:8px">Results on the test data (${t.n_rows.toLocaleString()} transactions, ${t.n_frauds} frauds)</h3>
+      <dl class="ledger">${ledger.map(([k, v]) => `<div class="ledger-row"><dt>${k}</dt><dd>${v}</dd></div>`).join("")}</dl>
+      <div class="section">
+        <h3 class="subheading" style="margin-bottom:8px">Models compared</h3>
+        <div class="table-wrap"><table class="tbl"><thead><tr><th>Model</th><th>PR-AUC (mean ± spread)</th><th class="num">ROC-AUC</th></tr></thead><tbody>${cv}</tbody></table></div>
+      </div>
+      <div class="section"><div class="charts">${charts}</div></div>`;
+  }
+
+  /* ---------- start-up ---------- */
+  async function init() {
+    const status = $("#status"), text = $("#statusText");
+    try {
+      const info = await api("/model-info");
+      status.dataset.state = "ok"; text.textContent = `Model ready: ${info.model_name}`;
+      if (info.mode === "fast") $("#fastNotice").hidden = false;
+      renderReport(info);
+      samples = await api("/samples");
+    } catch (e) {
+      status.dataset.state = e.status === 503 ? "warn" : "error";
+      text.textContent = e.status === 503 ? "Model not trained yet" : "Cannot reach the API";
+      $("#reportBody").innerHTML = `<h2 class="heading">Model report</h2><p class="error">${esc(e.message)}</p>`;
+    }
+  }
+  init();
+})();
+</script>
+</body>
+</html>
