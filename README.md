@@ -2,6 +2,9 @@
 
 [![CI](https://github.com/siddhantkyama/credit-card-fraud-detection/actions/workflows/ci.yml/badge.svg)](https://github.com/siddhantkyama/credit-card-fraud-detection/actions/workflows/ci.yml)
 
+**Live demo:** https://credit-card-fraud-detection-euko.onrender.com  
+(free hosting; the app sleeps after 15 minutes of inactivity, so the first open can take up to a minute)
+
 An end-to-end fraud detection system: seven models compared with leakage-free validation, a cost-based decision threshold, a FastAPI service, and a web dashboard for scoring single transactions or whole files.
 
 ![Scoring a transaction](docs/score.png)
