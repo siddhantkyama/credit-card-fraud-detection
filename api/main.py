@@ -12,6 +12,7 @@ from pathlib import Path
 import joblib
 import numpy as np
 import pandas as pd
+import sklearn
 from fastapi import FastAPI, File, HTTPException, UploadFile
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.staticfiles import StaticFiles
@@ -68,6 +69,13 @@ def get_artifact() -> dict:
             raise HTTPException(503, "No trained model found. Run: python -m src.train")
         _artifact = joblib.load(MODEL_PATH)
         logger.info("Loaded model '%s' (threshold %.3f)", _artifact["model_name"], _artifact["threshold"])
+        # A pickled model is only reliable with the library versions that trained it.
+        trained_with = _artifact.get("sklearn_version")
+        if trained_with and trained_with != sklearn.__version__:
+            logger.warning(
+                "VERSION MISMATCH: the model was trained with scikit-learn %s but %s is installed. "
+                "Install the pinned versions (python scripts/pin_serving_versions.py) or retrain.",
+                trained_with, sklearn.__version__)
     return _artifact
 
 

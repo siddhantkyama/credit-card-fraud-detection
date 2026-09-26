@@ -6,12 +6,11 @@ __pycache__/
 .pytest_cache/
 .ipynb_checkpoints/
 
-# Large or generated files: do NOT commit these
+# Data: do NOT commit (too large; see data/README.md)
 data/creditcard.csv
-models/*.joblib
+data/synthetic.csv
 *.pkl
 
-# Keep the small files that make the demo work
-!models/samples.json
-!models/metrics.json
-!outputs/*.png
+# NOTE: models/fraud_model.joblib IS committed on purpose, so the app and the
+# Docker image work without the 150 MB data set. Re-train and commit it whenever
+# the modelling code changes.

@@ -1,0 +1,11 @@
+# Exact versions used to train the deployed model (made by scripts/pin_serving_versions.py)
+numpy==2.5.3
+pandas==3.0.6
+scikit-learn==1.9.1
+imbalanced-learn==0.14.2
+xgboost==3.4.1
+lightgbm==4.7.0
+joblib==1.6.0
+fastapi==0.141.1
+uvicorn==0.53.0
+python-multipart==0.0.32
